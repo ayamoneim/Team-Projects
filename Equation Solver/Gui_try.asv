@@ -1,0 +1,608 @@
+function varargout = Gui_try(varargin)
+%GUI_TRY M-file for Gui_try.fig
+%      GUI_TRY, by itself, creates a new GUI_TRY or raises the existing
+%      singleton*.
+%
+%      H = GUI_TRY returns the handle to a new GUI_TRY or the handle to
+%      the existing singleton*.
+%
+%      GUI_TRY('Property','Value',...) creates a new GUI_TRY using the
+%      given property value pairs. Unrecognized properties are passed via
+%      varargin to Gui_try_OpeningFcn.  This calling syntax produces a
+%      warning when there is an existing singleton*.
+%
+%      GUI_TRY('CALLBACK') and GUI_TRY('CALLBACK',hObject,...) call the
+%      local function named CALLBACK in GUI_TRY.M with the given input
+%      arguments.
+%
+%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
+%      instance to run (singleton)".
+%
+% See also: GUIDE, GUIDATA, GUIHANDLES
+
+% Edit the above text to modify the response to help Gui_try
+
+% Last Modified by GUIDE v2.5 02-May-2015 13:18:30
+
+% Begin initialization code - DO NOT EDIT
+gui_Singleton = 1;
+gui_State = struct('gui_Name',       mfilename, ...
+                   'gui_Singleton',  gui_Singleton, ...
+                   'gui_OpeningFcn', @Gui_try_OpeningFcn, ...
+                   'gui_OutputFcn',  @Gui_try_OutputFcn, ...
+                   'gui_LayoutFcn',  [], ...
+                   'gui_Callback',   []);
+if nargin && ischar(varargin{1})
+   gui_State.gui_Callback = str2func(varargin{1});
+end
+
+if nargout
+    [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
+else
+    gui_mainfcn(gui_State, varargin{:});
+end
+% End initialization code - DO NOT EDIT
+
+
+% --- Executes just before Gui_try is made visible.
+function Gui_try_OpeningFcn(hObject, eventdata, handles, varargin)
+% This function has no output args, see OutputFcn.
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% varargin   unrecognized PropertyName/PropertyValue pairs from the
+%            command line (see VARARGIN)
+
+% Choose default command line output for Gui_try
+handles.output = hObject;
+
+% Update handles structure
+guidata(hObject, handles);
+
+% UIWAIT makes Gui_try wait for user response (see UIRESUME)
+% uiwait(handles.figure1);
+
+
+% --- Outputs from this function are returned to the command line.
+function varargout = Gui_try_OutputFcn(hObject, eventdata, handles)
+% varargout  cell array for returning output args (see VARARGOUT);
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Get default command line output from handles structure
+varargout{1} = handles.output;
+
+
+function Secant_Callback(hObject, eventdata, handles)
+
+syms x
+flag = 1;
+
+a = str2double(get(handles.LowerBound,'String'));
+b = str2double(get(handles.UpperBound,'String'));
+
+tolerance = str2double(get(handles.Tolerance,'String'));
+f = inline(get(handles.InputFn,'String'));
+fplot(f,[-10,10]);
+legend(char(f));
+hold on;
+c = b - (f(b) *(b - a) /(f(b)-f(a)));
+iterations = str2double(get(handles.Iterations,'String'));
+if(iterations==-1)
+    iterations = 50;
+end;
+tic;
+set(handles.table, 'columnname', {'i', 'X(i-1)', 'F(X(i-1))','X(i)' ,'F(Xi)','X(i+1)','F(X(i+1))'});
+
+data = zeros(iterations,7);
+data(flag,1) = flag;
+data(flag,2) = a;
+data(flag,3) = f(a);
+data(flag,4) = b;
+data(flag,5) = f(b);
+data(flag,6) = c;
+data(flag,7) = f(c);
+last = c;
+curr = 0;
+maxError = 0;
+while abs(c-b) > tolerance
+    a = b;
+    b = c;
+    if((f(b)-f(a))==0)
+        msgbox('Division By Zero')
+        break;
+    end
+    last = c;
+    c = b - f(b) *(b - a) /(f(b)-f(a)); 
+    curr = c;
+    plot(c,f(c),':r*');
+    hold on;
+    error = abs(curr-last)/curr;
+    if(error>maxError)
+        maxError = error;
+    end
+    flag = flag + 1;
+    data(flag,1) = flag;
+    data(flag,2) = a;
+    data(flag,3) = f(a);
+    data(flag,4) = b;
+    data(flag,5) = f(b);
+    data(flag,6) = c;
+    data(flag,7) = f(c);
+    if(flag == iterations)
+        break;
+    end
+end
+set(handles.text7,'string',toc);
+if(error*100<5)
+    set(handles.text9,'string',floor((2-log(2*error))));
+else
+    set(handles.text9,'string',0);
+end
+    set(handles.text11,'string',maxError);
+
+set(handles.table,'data',data);
+set(handles.ans,'String',num2str(c));
+hold off;
+
+
+function InputFn_Callback(hObject, eventdata, handles)
+
+function InputFn_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to InputFn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+
+
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes when figure1 is resized.
+function figure1_ResizeFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+
+function LowerBound_Callback(hObject, eventdata, handles)
+% hObject    handle to LowerBound (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of LowerBound as text
+%        str2double(get(hObject,'String')) returns contents of LowerBound as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function LowerBound_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to LowerBound (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function Tolerance_Callback(hObject, eventdata, handles)
+% hObject    handle to Tolerance (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of Tolerance as text
+%        str2double(get(hObject,'String')) returns contents of Tolerance as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function Tolerance_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to Tolerance (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function UpperBound_Callback(hObject, eventdata, handles)
+
+function UpperBound_CreateFcn(hObject, eventdata, handles)
+
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+function falsePosition_Callback(hObject, eventdata, handles)
+
+xl = str2double(get(handles.LowerBound,'String'));
+
+xu = str2double(get(handles.UpperBound,'String'));
+
+es = str2double(get(handles.Tolerance,'String'));
+
+f = inline(get(handles.InputFn,'String'));
+fplot(f,[-10,10],'b-');
+legend(char(f));
+tic;
+hold on;
+iterations = str2double(get(handles.Iterations,'String'));
+set(handles.table, 'columnname', {'i', 'X_Lower', 'F(X_Lower)','X_Upper' ,'F(X_Upper)','Xi','F(Xi)'});
+
+if(iterations==-1)
+    iterations = 50;
+end;
+
+data = zeros(iterations,7);
+
+
+
+xf =0;
+a= xl;
+b= xu;
+ya = f(a);
+yb = f(b);
+if (ya(1)*yb(1) >0)
+   %msgbox('Error:Function with no sign change');
+
+end
+x =0;
+last = 0;
+curr = 0;
+error = 0;
+maxError = 0;
+for i=1:iterations
+    xf=x;
+    last = x;
+    x = b -yb *((b-a)/ (yb-ya));
+    curr = x;
+    y = f(x);
+    data(i,1) = i;
+    data(i,2) = a;
+    data(i,3) = f(a);
+    data(i,4) = b;
+    data(i,5) = f(b);
+    data(i,6) = x;
+    data(i,7) = y;
+    plot(x,y,':r*');
+    hold on;
+    error = abs(last-curr);
+    if(error>maxError)
+        maxError = error;
+    end;
+    if y == 0
+  %  msgbox('Zero Found');
+        break;
+    elseif y*ya <0
+        b = x;
+        yb = y;
+    else
+        a = x;
+        ya =y;
+    end;
+    if ((i>1) && (abs(x - xf) <es))
+ %       msgbox('converged');
+        break
+    end;
+    iter =i;  
+end
+if (iter>=iterations)
+    %msgbox('no zero appears');
+end
+set(handles.text7,'string',toc);
+if(error*100<5)
+    set(handles.text9,'string',floor((2-log(2*error))));
+else
+    set(handles.text9,'string',0);
+end
+    set(handles.text11,'string',maxError);
+
+set(handles.table,'Data',data);
+set(handles.ans,'String',num2str(x));
+hold off;
+
+
+
+
+
+function NewtonRaphson_Callback(hObject, eventdata, handles)
+
+xo = str2double(get(handles.LowerBound,'String'));
+
+syms x;
+es = str2double(get(handles.Tolerance,'String'));
+f = inline(get(handles.InputFn,'String'));
+% f = @(x)get(handles.InputFn,'String');
+iterations = str2double(get(handles.Iterations,'String'));
+
+fplot(f,[-10,10]);
+legend(char(f));
+hold on;
+
+set(handles.table, 'columnname', {'i', 'Xi', 'F(Xi)', 'D(Xi)'});
+d=diff(sym(f),1);
+data = zeros(iterations,7);
+tic;
+maxError = 0;
+for i=1:1:iterations
+    sa=subs(f,xo);
+    sb=subs(d,xo);
+    xi=xo-(sa/sb);
+    ea=abs((xi-xo));
+    xo=xi;
+    data(i,1) = i;
+    data(i,2) = xo;
+    data(i,3) = sa;
+    data(i,4) = sb;
+    plot(xo,f(xo),':r*');
+    hold on;
+    if(ea>maxError)
+        maxError = ea;
+    end;
+    if(ea<es)
+        break;
+    end
+end
+set(handles.text7,'string',toc);
+
+
+if(isnan(xo)==1)
+    msgbox('No Root Found')
+else
+    format short
+set(handles.table,'Data',data);
+if(ea*100<5)
+    set(handles.text9,'string',floor((2-log(2*ea))));
+else
+    set(handles.text9,'string',0);
+end
+set(handles.text11,'string',maxError);
+set(handles.ans,'String',num2str(xo));
+end
+hold off;
+
+
+
+function Iterations_Callback(hObject, eventdata, handles)
+% hObject    handle to Iterations (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of Iterations as text
+%        str2double(get(hObject,'String')) returns contents of Iterations as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function Iterations_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to Iterations (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+function Bisection_Callback(hObject, eventdata, handles)
+
+
+xl = str2double(get(handles.LowerBound,'String'));
+xu = str2double(get(handles.UpperBound,'String'));
+tolerance = str2double(get(handles.Tolerance,'String'));
+f = inline(get(handles.InputFn,'String'));
+digits(7)
+tic;
+fplot(f,[-10,10],'b-');
+legend(char(f));
+hold on;
+iterations = str2double(get(handles.Iterations,'String'));
+set(handles.table, 'columnname', {'i', 'X_Lower', 'F(X_Lower)','X_Upper' ,'F(X_Upper)','Xi','F(Xi)'});
+data = zeros(iterations,7);
+last = 0;
+curr = 0;
+maxError = 0;
+    if f(xl)* f(xu) >0
+        msgbox('there is no root');
+    else 
+                xr = xl + (xu-xl)/2;
+                last = xr;
+                i = 1;
+                data(i,1) = i;
+                data(i,2) = xl;
+                data(i,3) = f(xl);
+                data(i,4) = xu;
+                data(i,5) = f(xu);
+                data(i,6) = xr;
+                data(i,7) = f(xr);
+        i = 2;
+        while iterations>= i
+            if f(xl)*f(xr)<0
+                xu=xr;
+            else 
+                xl=xr;
+            end
+                last = xr;
+                xr = xl + (xu-xl)/2;
+                curr = xr;
+                data(i,1) = i;
+                data(i,2) = xl;
+                data(i,3) = f(xl);
+                data(i,4) = xu;
+                data(i,5) = f(xu);
+                data(i,6) = xr;
+                data(i,7) = f(xr);
+                error = abs(curr-last)/curr;
+                if f(xl)*f(xr)==0
+                    error = 0;
+                end;
+                if(error>maxError)
+                    maxError = error;
+                end
+                if(error<tolerance)
+                    break;
+                end
+            plot(xr,f(xr),':r*');
+            hold on;
+            i = i + 1;
+        end
+        set(handles.table,'Data',data);
+
+set(handles.ans,'String',num2str(xr));
+    end
+if(error*100<5)
+    set(handles.text9,'string',floor((2-log(2*error))));
+else
+    set(handles.text9,'string',0);
+end
+set(handles.text7,'string',toc);
+        set(handles.text11,'string',maxError);
+
+ hold off;  
+    
+
+% --- Executes on button press in FileInput.
+function FileInput_Callback(hObject, eventdata, handles)
+disp(get(handles.fileName,'String'));
+file = fopen(get(handles.fileName,'String'),'r');
+
+line = fgetl(file);
+set(handles.InputFn,'String',line);
+
+line = fgetl(file);
+set(handles.LowerBound,'String',line);
+
+line = fgetl(file);
+set(handles.UpperBound,'String',line);
+
+line = fgetl(file);
+set(handles.Tolerance,'String',line);
+
+line = fgetl(file);
+set(handles.Iterations,'String',line);
+
+fclose(file);
+
+
+% --- Executes on button press in solve.
+function solve_Callback(hObject, eventdata, handles)
+% hObject    handle to solve (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+tolerance = str2double(get(handles.Tolerance,'String'));
+f = inline(get(handles.InputFn,'String'));
+tic;
+fplot(f,[-10,10],'b-');
+legend(char(f));
+hold off;
+iterations = str2double(get(handles.Iterations,'String'));
+res = interface(f,iterations,tolerance);
+
+if(isnan(res)==1)
+    msgbox('No roots Found');
+else
+    set(handles.ans,'String',num2str(res));
+    set(handles.text7,'string',toc);
+end
+    
+
+
+function fileName_Callback(hObject, eventdata, handles)
+% hObject    handle to fileName (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of fileName as text
+%        str2double(get(hObject,'String')) returns contents of fileName as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function fileName_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to fileName (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function FixedPoint_Callback(hObject, eventdata, handles)
+
+p0 = str2double(get(handles.LowerBound,'String'));
+tolerance = str2double(get(handles.Tolerance,'String'));
+g = inline(get(handles.InputFn,'String'));
+syms x
+f = [char(g),' - x'];
+
+ fplot(g,[-10,10],'g-');
+legend(char(g));
+hold on;
+ fplot(inline(f),[-10,10],'b-');
+
+f = inline(f);
+hold on;
+
+iterations = str2double(get(handles.Iterations,'String'));
+set(handles.table, 'columnname', {'i', 'Pi', 'Pi+1','F(Pi+1)'});
+data = zeros(iterations,7);
+i = 1;
+tic;
+last = 0;
+curr = 0;
+p = 0;
+maxError = 0;
+while i <= iterations
+    last = p;
+    p = g(p0);
+    curr = p;
+    plot(p,':r*');
+    hold on;
+    data(i,1) = i;
+    data(i,2) = p0;
+    data(i,3) = p;
+    data(i,4) = f(p);
+    error = abs(curr-last)/curr;
+     if(error>maxError)
+         maxError = error;
+     end
+    if abs((p - p0)) < tolerance    
+        set(handles.table,'Data',data);
+           
+            if(error*100<5)
+                set(handles.text9,'string',floor((2-log(2*error))));
+            else
+                set(handles.text9,'string',0);
+            end
+                set(handles.text11,'string',maxError);
+
+        set(handles.ans,'String',p); 
+        set(handles.text7,'string',toc);
+        x = [-10:5:10];
+        y = x;
+        plot(x, y,'y-');
+       
+        hold off;
+        return
+    end
+i = i + 1;   
+p0 = p;        
+
+end
+msgbox('Solution did not converge');
+hold off;

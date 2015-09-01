@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<xs:element name="persons1">
+	<xs:complexType>
+		<xs:sequence>
+			<xs:element name="Row">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="name" type="xs:varchar"/>
+						<xs:element name="id" type="xs:integer"/>
+						<xs:element name="salary" type="xs:double"/>
+						<xs:element name="arr" type="xs:integerarray"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+</xs:element>
