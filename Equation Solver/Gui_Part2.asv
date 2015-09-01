@@ -1,0 +1,870 @@
+function varargout = Gui_Part2(varargin)
+% GUI_PART2 M-file for Gui_Part2.fig
+%      GUI_PART2, by itself, creates a new GUI_PART2 or raises the existing
+%      singleton*.
+%
+%      H = GUI_PART2 returns the handle to a new GUI_PART2 or the handle to
+%      the existing singleton*.
+%
+%      GUI_PART2('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in GUI_PART2.M with the given input arguments.
+%
+%      GUI_PART2('Property','Value',...) creates a new GUI_PART2 or raises the
+%      existing singleton*.  Starting from the left, property value pairs are
+%      applied to the GUI before Gui_Part2_OpeningFcn gets called.  An
+%      unrecognized property name or invalid value makes property application
+%      stop.  All inputs are passed to Gui_Part2_OpeningFcn via varargin.
+%
+%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
+%      instance to run (singleton)".
+%
+% See also: GUIDE, GUIDATA, GUIHANDLES
+
+% Edit the above text to modify the response to help Gui_Part2
+
+% Last Modified by GUIDE v2.5 10-May-2015 00:07:32
+
+% Begin initialization code - DO NOT EDIT
+gui_Singleton = 1;
+gui_State = struct('gui_Name',       mfilename, ...
+                   'gui_Singleton',  gui_Singleton, ...
+                   'gui_OpeningFcn', @Gui_Part2_OpeningFcn, ...
+                   'gui_OutputFcn',  @Gui_Part2_OutputFcn, ...
+                   'gui_LayoutFcn',  [] , ...
+                   'gui_Callback',   []);
+if nargin && ischar(varargin{1})
+    gui_State.gui_Callback = str2func(varargin{1});
+end
+
+if nargout
+    [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
+else
+    gui_mainfcn(gui_State, varargin{:});
+end
+% End initialization code - DO NOT EDIT
+
+
+% --- Executes just before Gui_Part2 is made visible.
+function Gui_Part2_OpeningFcn(hObject, eventdata, handles, varargin)
+% This function has no output args, see OutputFcn.
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% varargin   command line arguments to Gui_Part2 (see VARARGIN)
+
+% Choose default command line output for Gui_Part2
+handles.output = hObject;
+
+% Update handles structure
+guidata(hObject, handles);
+
+
+function varargout = Gui_Part2_OutputFcn(hObject, eventdata, handles) 
+
+varargout{1} = handles.output;
+function  [dat0,dat1] = parse(s)
+variableArray = zeros(26);
+vars = 0;
+curr = '';
+dat0 = ''
+dat1 = zeros(27,1)
+for(i = 1:length(s))
+    if(i==1)
+        if(s(1)=='-')
+            curr = [curr,'-'];
+        elseif(double(s(1))>=97 && double(s(1))<=122)
+             if(variableArray(double(s(1))-97)==0)
+                vars = vars+1;
+                variableArray(double(s(i))-97) = vars;
+            end
+            if((length(curr)==1 && curr(1)=='-')||(length(curr)==0))
+                curr = [curr,'1'];
+            end
+            variable = s(1);
+            dat0 =[dat0,  char(variable)];
+        dat1(vars,1)= str2num(curr);   
+        else
+            curr = [curr,s(1)];
+        end
+        
+    end
+    if(i>1)
+        if(s(i)=='-')
+
+            curr = '-';
+        elseif(s(i)=='+')
+
+            curr = '';
+        elseif(s(i)=='=')
+
+            curr = '';
+        elseif(s(i)=='*')
+        elseif(double(s(i))>=97 && double(s(i))<=122)
+            if(variableArray(double(s(i))-97)==0)
+                vars = vars+1;
+            
+                variableArray(double(s(i))-97) = vars;
+            end
+             if((length(curr)==1 && curr(1)=='-')||(length(curr)==0))
+                curr = [curr,'1'];
+            end
+            variable = s(i);
+           dat0 =[dat0,  variable];
+           dat1(vars,1)= str2num(curr);   
+        else
+            curr = [curr,s(i)];
+        end
+    end
+end
+
+
+dat0 =[dat0, '&'];
+        dat1(vars+1,1)= str2num(curr);   
+
+function pushbutton1_Callback(hObject, eventdata, handles)
+
+equations =get(handles.uitable2,'data');
+equations = equations(:,1);
+%# find empty cells
+emptyCells = cellfun(@isempty,equations);
+%# remove empty cells
+equations(emptyCells) = [];
+[l,w] = size(equations);
+dat = zeros(l,27)
+variables = '';
+vars = 0;
+tic;
+for(i = 1:l)
+    s = lower(char(equations(i,1)));
+    s = regexprep(s,'\s*','')
+    [equVars,equCoeff] = parse(s);
+    
+    for(j=1:length(equVars))
+          curr = '';
+          curr = [curr,equVars(j)]
+          
+        if(vars>0)
+            found = 0;
+            for(k = 1:vars)
+                if(variables(k)==curr)
+                    if(curr=='&')
+                        dat(i,27) = equCoeff(j);
+
+                    else
+                    dat(i,k) = equCoeff(j);
+                    end;
+                    found = 1;
+                    break;
+                end
+            end
+            if(found==0)
+                 vars = vars +1 ;
+                 if(curr=='&')
+                     vars = vars-1;
+                 dat(i,27) = equCoeff(j);
+                 else
+                 dat(i,vars) = equCoeff(j);
+                 variables= [variables,curr];
+                 end
+            end;
+        else
+            vars = vars +1 ;
+            dat(i,1) = equCoeff(j);
+            variables = [variables,curr];
+        end
+    end    
+end
+    A = zeros(l,vars);
+    B = dat(:,27);
+
+ if(length(variables)==length(A))
+   for(i=1:l)
+       for(j=1:vars)
+           A(i,j)=dat(i,j);
+       end
+   end
+
+res=isnan(Naiive_Gauss(A,B));
+for(i=1:length(res))
+    if(res(i)==1)
+        msgbox('Has No Or Infinite Solutions');
+        break;
+    end;    
+end;
+set(handles.text3,'string',toc);
+
+ set(handles.uitable4,'Data',cellstr(strread(variables,'%c','delimiter','')));
+ set(handles.uitable1,'Data',(Naiive_Gauss(A,B)));
+ else
+     msgbox('Number of variables must be equal to number of equations');
+ end
+    
+function x = Naiive_Gauss( A,B )
+    n = length(A);
+    %forward elimination
+    for k=1:n-1
+        for i = k+1:n
+            factor = A(i,k)/A(k,k);
+            for j =k+1:n
+                A(i,j) = A(i,j)-factor*A(k,j);
+            end
+            B(i) = B(i)-factor*B(k);
+        end
+    end
+    %back substituion
+    x = zeros(n,1);
+    x(n) = B(n)/A(n,n);
+    for i = n-1 :-1: 1
+        sum = 0;
+        for j = i+1:n
+            sum = sum+A(i,j)*x(j);
+        end
+        x(i) = (B(i)-sum)/A(i,i);
+    end
+    
+    %check for the returned value if isnan(x) ==1 , then there was an
+    %error- division by zero-
+    % nan represents (not a number) flag for a value
+
+
+
+function pushbutton2_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+ 
+    
+   oldDat = get(handles.uitable5,'Data');
+   [nRows,w] = size(oldDat);
+   dat = char(nRows+1,2);
+   disp(oldDat)
+   dat = [dat,''];
+%    dat(1:nRows,:) = oldDat;
+    set(handles.uitable5,'Data',dat);
+  
+    guidata(hObject,handles);
+   
+
+% --- Executes on button press in pushbutton3.
+function pushbutton3_Callback(hObject, eventdata, handles)
+equations =get(handles.uitable2,'data');
+equations = equations(:,1);
+%# find empty cells
+emptyCells = cellfun(@isempty,equations);
+%# remove empty cells
+equations(emptyCells) = [];
+[l,w] = size(equations);
+dat = zeros(l,27)
+variables = '';
+vars = 0;
+tic;
+for(i = 1:l)
+    s = lower(char(equations(i,1)));
+    s = regexprep(s,'\s*','')
+    [equVars,equCoeff] = parse(s);
+    
+    for(j=1:length(equVars))
+          curr = '';
+          curr = [curr,equVars(j)]
+          
+        if(vars>0)
+            found = 0;
+            for(k = 1:vars)
+                if(variables(k)==curr)
+                    if(curr=='&')
+                        dat(i,27) = equCoeff(j);
+
+                    else
+                    dat(i,k) = equCoeff(j);
+                    end;
+                    found = 1;
+                    break;
+                end
+            end
+            if(found==0)
+                 vars = vars +1 ;
+                 if(curr=='&')
+                     vars = vars-1;
+                 dat(i,27) = equCoeff(j);
+                 else
+                 dat(i,vars) = equCoeff(j);
+                 variables= [variables,curr];
+                 end
+            end;
+        else
+            vars = vars +1 ;
+            dat(i,1) = equCoeff(j);
+            variables = [variables,curr];
+        end
+    end    
+end
+    A = zeros(l,vars);
+    B = dat(:,27);
+    
+   for(i=1:l)
+       for(j=1:vars)
+           A(i,j)=dat(i,j);
+       end
+   end
+
+res=isnan(PPivoting_Gauss(A,B));
+for(i=1:length(res))
+    if(res(i)==1)
+        msgbox('Has No Or Infinite Solutions');
+        break;
+    end;    
+end;
+set(handles.text3,'string',toc);
+if(length(variables)==length(A))
+ set(handles.uitable4,'Data',cellstr(strread(variables,'%c','delimiter','')));
+ set(handles.uitable1,'Data',(PPivoting_Gauss(A,B)));
+ else
+     msgbox('Number of variables must be equal to number of equations');
+ end
+ function x = PPivoting_Jordan( A,B )
+    n = length(A);
+    for k=1:n
+        %checking for max pivot
+        max=0;
+        maxi=k;
+        for i=k:n
+            if(abs(A(i,k))>max)
+                max = abs(A(i,k));
+                maxi=i;
+            end
+        end
+        % swapping rows
+        if(maxi~=k)
+            for i=k:n
+                temp = A(k,i);
+                A(k,i)=A(maxi,i);
+                A(maxi,i)=temp;
+            end
+            temp = B(k);
+            B(k)=B(maxi);
+            B(maxi)=temp;
+        end
+        
+        % forward elimination after pivoting
+        for i = 1:n
+            if(i == k)
+				continue;
+			end
+            factor = A(i,k)/A(k,k);
+            for j =k:n
+                A(i,j) = A(i,j)-factor*A(k,j);
+            end
+            B(i) = B(i)-factor*B(k);
+        end
+    end
+    
+    % back substituion
+    x = zeros(n,1);
+    for i= 1:n
+		x(i)= B(i)/A(i,i);
+    end
+    
+    %check for the returned value if isnan(x) ==1 , then there was an
+    %error- division by zero-
+    % nan represents (not a number) flag for a value
+
+
+
+ 
+% --- Executes on button press in pushbutton4.
+function pushbutton4_Callback(hObject, eventdata, handles)
+equations =get(handles.uitable2,'data');
+equations = equations(:,1);
+%# find empty cells
+emptyCells = cellfun(@isempty,equations);
+%# remove empty cells
+equations(emptyCells) = [];
+[l,w] = size(equations);
+dat = zeros(l,27)
+variables = '';
+vars = 0;
+tic;
+for(i = 1:l)
+    s = lower(char(equations(i,1)));
+    s = regexprep(s,'\s*','')
+    [equVars,equCoeff] = parse(s);
+    
+    for(j=1:length(equVars))
+          curr = '';
+          curr = [curr,equVars(j)]
+          
+        if(vars>0)
+            found = 0;
+            for(k = 1:vars)
+                if(variables(k)==curr)
+                    if(curr=='&')
+                        dat(i,27) = equCoeff(j);
+
+                    else
+                    dat(i,k) = equCoeff(j);
+                    end;
+                    found = 1;
+                    break;
+                end
+            end
+            if(found==0)
+                 vars = vars +1 ;
+                 if(curr=='&')
+                     vars = vars-1;
+                 dat(i,27) = equCoeff(j);
+                 else
+                 dat(i,vars) = equCoeff(j);
+                 variables= [variables,curr];
+                 end
+            end;
+        else
+            vars = vars +1 ;
+            dat(i,1) = equCoeff(j);
+            variables = [variables,curr];
+        end
+    end    
+end
+    A = zeros(l,vars);
+    B = dat(:,27);
+    
+   for(i=1:l)
+       for(j=1:vars)
+           A(i,j)=dat(i,j);
+       end
+   end
+
+res=isnan(Naiive_Jordan(A,B));
+for(i=1:length(res))
+    if(res(i)==1)
+        msgbox('Has No Or Infinite Solutions');
+        break;
+    end;    
+end;
+set(handles.text3,'string',toc);
+if(length(variables)==length(A))
+ set(handles.uitable4,'Data',cellstr(strread(variables,'%c','delimiter','')));
+ set(handles.uitable1,'Data',(Naiive_Jordan(A,B)));
+  else
+     msgbox('Number of variables must be equal to number of equations');
+ end
+% --- Executes on button press in pushbutton5.
+function pushbutton5_Callback(hObject, eventdata, handles)
+equations =get(handles.uitable2,'data');
+equations = equations(:,1);
+%# find empty cells
+emptyCells = cellfun(@isempty,equations);
+%# remove empty cells
+equations(emptyCells) = [];
+[l,w] = size(equations);
+dat = zeros(l,27)
+variables = '';
+vars = 0;
+tic;
+for(i = 1:l)
+    s = lower(char(equations(i,1)));
+    s = regexprep(s,'\s*','')
+    [equVars,equCoeff] = parse(s);
+    
+    for(j=1:length(equVars))
+          curr = '';
+          curr = [curr,equVars(j)]
+          
+        if(vars>0)
+            found = 0;
+            for(k = 1:vars)
+                if(variables(k)==curr)
+                    if(curr=='&')
+                        dat(i,27) = equCoeff(j);
+
+                    else
+                    dat(i,k) = equCoeff(j);
+                    end;
+                    found = 1;
+                    break;
+                end
+            end
+            if(found==0)
+                 vars = vars +1 ;
+                 if(curr=='&')
+                     vars = vars-1;
+                 dat(i,27) = equCoeff(j);
+                 else
+                 dat(i,vars) = equCoeff(j);
+                 variables= [variables,curr];
+                 end
+            end;
+        else
+            vars = vars +1 ;
+            dat(i,1) = equCoeff(j);
+            variables = [variables,curr];
+        end
+    end    
+end
+    A = zeros(l,vars);
+    B = dat(:,27);
+    
+   for(i=1:l)
+       for(j=1:vars)
+           A(i,j)=dat(i,j);
+       end
+   end
+res=isnan(PPivoting_Jordan(A,B));
+for(i=1:length(res))
+    if(res(i)==1)
+        msgbox('Has No Or Infinite Solutions');
+        break;
+    end;    
+end;
+
+set(handles.text3,'string',toc);
+if(length(variables)==length(A))
+ set(handles.uitable4,'Data',cellstr(strread(variables,'%c','delimiter','')));
+ set(handles.uitable1,'Data',(PPivoting_Jordan(A,B)));
+  else
+     msgbox('Number of variables must be equal to number of equations');
+ end
+% --- Executes during object creation, after setting all properties.
+function uitable2_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to uitable2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+%set(hObject, 'Data', cell(1));
+
+
+% --- Executes when entered data in editable cell(s) in uitable2.
+function uitable2_CellEditCallback(hObject, eventdata, handles)
+% hObject    handle to uitable2 (see GCBO)
+% eventdata  structure with the following fields (see UITABLE)
+%	Indices: row and column indices of the cell(s) edited
+%	PreviousData: previous data for the cell(s) edited
+%	EditData: string(s) entered by the user
+%	NewData: EditData or its converted form set on the Data property. Empty
+%	if Data was not changed
+%	Error: error string when failed to convert EditData to appropriate value for Data
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in pushbutton6.
+function pushbutton6_Callback(hObject, eventdata, handles)
+equations =get(handles.uitable2,'data');
+
+equations = equations(:,1);
+%# find empty cells
+emptyCells = cellfun(@isempty,equations);
+%# remove empty cells
+equations(emptyCells) = [];
+
+
+[l,w] = size(equations);
+
+dat = zeros(l,27)
+variables = '';
+
+
+vars = 0;
+tic;
+for(i = 1:l)
+    s = lower(char(equations(i,1)));
+    s = regexprep(s,'\s*','')
+    [equVars,equCoeff] = parse(s);
+    
+    for(j=1:length(equVars))
+          curr = '';
+          curr = [curr,equVars(j)]
+          
+        if(vars>0)
+            found = 0;
+            for(k = 1:vars)
+                if(variables(k)==curr)
+                    if(curr=='&')
+                        dat(i,27) = equCoeff(j);
+
+                    else
+                    dat(i,k) = equCoeff(j);
+                    end;
+                    found = 1;
+                    break;
+                end
+            end
+            if(found==0)
+                 vars = vars +1 ;
+                 if(curr=='&')
+                     vars = vars-1;
+                 dat(i,27) = equCoeff(j);
+                 else
+                 dat(i,vars) = equCoeff(j);
+                 variables= [variables,curr];
+                 end
+            end;
+        else
+            vars = vars +1 ;
+            dat(i,1) = equCoeff(j);
+            variables = [variables,curr];
+        end
+    end    
+end
+    A = zeros(l,vars);
+    B = dat(:,27);
+    
+   for(i=1:l)
+       for(j=1:vars)
+           A(i,j)=dat(i,j);
+       end
+   end
+
+res=isnan(LU(A,B));
+for(i=1:length(res))
+    if(res(i)==1)
+        msgbox('Has No Or Infinite Solutions');
+        break;
+    end;    
+end;
+set(handles.text3,'string',toc);
+if(length(variables)==length(A))
+ set(handles.uitable4,'Data',cellstr(strread(variables,'%c','delimiter','')));
+ set(handles.uitable1,'Data',(LU(A,B)));
+  else
+     msgbox('Number of variables must be equal to number of equations');
+ end
+ function x = Naiive_Jordan( A,B )
+    n = length(A);
+    %forward elimination
+    for k=1:n
+        for i = 1:n
+            if(i == k)
+				continue;
+			end
+            factor = A(i,k)/A(k,k);
+            for j =k:n
+                A(i,j) = A(i,j)-factor*A(k,j);
+            end
+            B(i) = B(i)-factor*B(k);
+        end
+    end
+    %back substituion
+    x = zeros(n,1);
+    for i= 1:n
+		x(i)= B(i)/A(i,i);
+    end
+    %check for the returned value if isnan(x) ==1 , then there was an
+    %error- division by zero-
+    % nan represents (not a number) flag for a value
+
+
+ 
+ 
+ function x = LU( A,B )
+    n = length(A);
+    swaps = zeros(n);
+    for i=1:n
+        swaps(i)=i;
+    end
+    
+    %forward gaussian elimination with partial pivoting in order to get U
+    %and L
+    
+    for k=1:n-1
+        %checking for max pivot
+        max=0;
+        maxi=k;
+        for i=k:n
+            if(abs(A(swaps(i),k))>max)
+                max = abs(A(swaps(i),k));
+                maxi=i;
+            end
+        end
+        % swapping rows
+        if(maxi~=k)
+           temp = swaps(k);
+           swaps(k)=swaps(maxi);
+           swaps(maxi)=temp;
+        end
+        
+        % forward elimination after pivoting
+        for i = k+1:n
+            factor = A(swaps(i),k)/A(swaps(k),k);
+            A(swaps(i),k)=factor;
+            for j =k+1:n
+                A(swaps(i),j) = A(swaps(i),j)-factor*A(swaps(k),j);
+            end
+        end
+    end
+
+    
+    % forward substitution to get d where Ld=B
+    d = zeros(n);
+    d(swaps(1))=B(swaps(1));
+    for i = 2 : n
+        sum = 0;
+        for j = 1:i-1
+            sum = sum+A(swaps(i),j)*d(swaps(j));
+        end
+        d(swaps(i)) = (B(swaps(i))-sum);
+    end
+    
+    % back substitution to get x where Ux=d
+    x = zeros(n,1);
+    x(n) = d(swaps(n))/A(swaps(n),n);
+    for i = n-1 :-1: 1
+        sum = 0;
+        for j = i+1:n
+            sum = sum+A(swaps(i),j)*x(j);
+        end
+        x(i) = (d(swaps(i))-sum)/A(swaps(i),i);
+    end
+ 
+function x = PPivoting_Gauss( A,B )
+    n = length(A);
+    for k=1:n-1
+        %checking for max pivot
+        max=0;
+        maxi=k;
+        for i=k:n
+            if(abs(A(i,k))>max)
+                max = abs(A(i,k));
+                maxi=i;
+            end
+        end
+        % swapping rows
+        if(maxi~=k)
+            for i=k:n
+                temp = A(k,i);
+                A(k,i)=A(maxi,i);
+                A(maxi,i)=temp;
+            end
+            temp = B(k);
+            B(k)=B(maxi);
+            B(maxi)=temp;
+        end
+        
+        % forward elimination after pivoting
+        for i = k+1:n
+            factor = A(i,k)/A(k,k);
+            for j =k+1:n
+                A(i,j) = A(i,j)-factor*A(k,j);
+            end
+            B(i) = B(i)-factor*B(k);
+        end
+    end
+    
+    % back substituion
+    x = zeros(n,1);
+    x(n) = B(n)/A(n,n);
+    for i = n-1 :-1: 1
+        sum = 0;
+        for j = i+1:n
+            sum = sum+A(i,j)*x(j);
+        end
+        x(i) = (B(i)-sum)/A(i,i);
+    end
+    
+    %check for the returned value if isnan(x) ==1 , then there was an
+    %error- division by zero-
+    % nan represents (not a number) flag for a value
+
+
+
+
+% --- Executes on button press in pushbutton9.
+function pushbutton9_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton9 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+
+function edit3_Callback(hObject, eventdata, handles)
+% hObject    handle to edit3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit3 as text
+%        str2double(get(hObject,'String')) returns contents of edit3 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit3_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in pushbutton10.
+function pushbutton10_Callback(hObject, eventdata, handles)
+fid = fopen(get(handles.edit4,'String'));
+dat = cell(1,1);
+tline = fgetl(fid);
+dat{1,1} = tline;
+i = 2;
+while ischar(tline)
+    tline = fgetl(fid);
+    if(ischar(tline)==0)
+        break;
+    end;
+    dat{i,1}=[];
+    dat{i,1} = tline;
+    i = i+1;
+end
+disp(dat);
+set(handles.uitable2,'data',dat);
+fclose(fid);
+
+
+function edit4_Callback(hObject, eventdata, handles)
+% hObject    handle to edit4 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit4 as text
+%        str2double(get(hObject,'String')) returns contents of edit4 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit4_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit4 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit6_Callback(hObject, eventdata, handles)
+% hObject    handle to edit6 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit6 as text
+%        str2double(get(hObject,'String')) returns contents of edit6 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit6_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit6 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function uitable5_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to uitable5 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+set(handles.uitable2,'Dta
